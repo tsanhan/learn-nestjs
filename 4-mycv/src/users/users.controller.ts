@@ -1,25 +1,67 @@
-import { Body, ClassSerializerInterceptor, Controller, Delete, Get, NotFoundException, Param, Patch, Post, Query, UseInterceptors } from '@nestjs/common';
+import { BadRequestException, Body, ClassSerializerInterceptor, Controller, Delete, Get, NotFoundException, Param, Patch, Post, Query, Session, UseGuards, UseInterceptors } from '@nestjs/common';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UsersService } from './users.service';
 import { log } from 'console';
 import { UpdateUserDto } from './dtos/update-user.dto';
-import { Serialize, SerializeInterceptor } from 'src/interceptors/serialize.interceptor';
+import { Serialize } from 'src/interceptors/serialize.interceptor';
 import { UserDto } from './dtos/user.dto';
+import { AuthError, AuthService } from './auth.service';
+import { CurrnetUser } from './decorators/currnet-user.decorator';
+import { User } from './user.entity';
+import { AuthGuard } from 'src/guards/auth.guard';
 
 @Controller('auth')
 @Serialize(UserDto)
 export class UsersController {
 
-    constructor(private usersService: UsersService) {
+    constructor(
+        private usersService: UsersService,
+        private authService: AuthService
+    ) {
         
         
-    }
-    @Post('/signup')
-    createUser(@Body() body: CreateUserDto) {
-        return this.usersService.create(body.email, body.password);
     }
 
-    
+   
+    // @Get('/whoami')
+    // whoAmI(@Session() session: any) {
+
+    //     const user = this.usersService.findOne(session.userId);
+    //     if(!user) 
+    //         throw new NotFoundException('user not found');
+    //     return user;
+    // }
+
+    @Get('/whoami')
+    @UseGuards(AuthGuard)
+    whoAmI(@CurrnetUser() user: User) {
+        return user;
+    }
+
+    @Post('/signout')
+    signout(@Session() session: any) {
+        session.userId = null;
+    }
+
+    @Post('/signup')
+    async createUser(@Body() body: CreateUserDto, @Session() session: any) {
+        const user = await this.authService.signup(body.email, body.password);
+        if(user === AuthError.UserExists)
+            throw new BadRequestException(AuthError.UserExists);
+        session.userId = user.id;
+        return user;
+    }
+    @Post('/signin')
+    async signin(@Body() body: CreateUserDto, @Session() session: any) {
+        const user = await this.authService.signin(body.email, body.password);
+        if(user === AuthError.UserNotFound)
+            throw new NotFoundException(AuthError.UserNotFound);
+        if(user === AuthError.BadPassword)
+            throw new BadRequestException(AuthError.BadPassword);
+        session.userId = user.id;
+        return user;
+    }
+ 
     @Get('/:id')
     async findUser(@Param("id") id: string) {
         log('handler is running');
@@ -50,11 +92,5 @@ export class UsersController {
             throw new NotFoundException('user not found');
         return this.usersService.update(parseInt(id), body);
     }
-    
 
-
-// findOne
-// find
-// update
-// remove
 }

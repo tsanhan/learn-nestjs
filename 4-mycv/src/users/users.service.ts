@@ -14,7 +14,13 @@ export class UsersService {
     }
 
     findOne(id: number) {
+        if (!id) 
+            return null;
         return this.repo.findOneBy({ id });
+    }
+
+    findOneByEmail(email: string) {
+        return this.repo.findOneBy({ email });
     }
 
     find(email: string) {
@@ -35,9 +41,9 @@ export class UsersService {
 
     async remove(id: number):Promise<User> {
         const user  = await this.findOne(id);
-        if (!user) {
+        if (!user) 
             return null;
-        }
+        
         return this.repo.remove(user);
     }
 }
