@@ -46,18 +46,13 @@ export class UsersController {
     @Post('/signup')
     async createUser(@Body() body: CreateUserDto, @Session() session: any) {
         const user = await this.authService.signup(body.email, body.password);
-        if(user === AuthError.UserExists)
-            throw new BadRequestException(AuthError.UserExists);
         session.userId = user.id;
         return user;
     }
     @Post('/signin')
     async signin(@Body() body: CreateUserDto, @Session() session: any) {
         const user = await this.authService.signin(body.email, body.password);
-        if(user === AuthError.UserNotFound)
-            throw new NotFoundException(AuthError.UserNotFound);
-        if(user === AuthError.BadPassword)
-            throw new BadRequestException(AuthError.BadPassword);
+        
         session.userId = user.id;
         return user;
     }

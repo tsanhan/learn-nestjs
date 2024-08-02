@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { UsersService } from "./users.service";
 import { randomBytes, scryptSync} from 'crypto';
 
@@ -16,9 +16,9 @@ export class AuthService {
 
     async signup(email: string, password: string) {
         // see if user with email exists
-        const isUserExsist = !!(await this.usersService.findOneByEmail(email));
-        if(isUserExsist) 
-            return AuthError.UserExists;
+        const isUserExsist = await this.usersService.find(email);
+        if(isUserExsist.length) 
+            throw new BadRequestException(AuthError.UserExists);
 
         // hash the password 
             // generate a salt
@@ -36,16 +36,16 @@ export class AuthService {
     }
 
     async signin(email: string, password: string) {
-        const user = await this.usersService.findOneByEmail(email);
-        if(!user) 
-            return AuthError.UserNotFound;
-        
-        const [salt, storedHash] = user.password.split('.');
+        const user = await this.usersService.find(email);
+        if(!user.length) 
+            throw new NotFoundException(AuthError.UserNotFound);
+        const fownUser = user[0];
+        const [salt, storedHash] = fownUser.password.split('.');
         const hash = scryptSync(password, salt, 32).toString('hex');
         if(hash !== storedHash) 
-            return AuthError.BadPassword;
+            throw new NotFoundException(AuthError.BadPassword);
         
-        return user;
+        return fownUser;
         
     }
 }
