@@ -1,14 +1,13 @@
 import { BadRequestException, Body, ClassSerializerInterceptor, Controller, Delete, Get, NotFoundException, Param, Patch, Post, Query, Session, UseGuards, UseInterceptors } from '@nestjs/common';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UsersService } from './users.service';
-import { log } from 'console';
 import { UpdateUserDto } from './dtos/update-user.dto';
-import { Serialize } from 'src/interceptors/serialize.interceptor';
 import { UserDto } from './dtos/user.dto';
 import { AuthError, AuthService } from './auth.service';
 import { CurrnetUser } from './decorators/currnet-user.decorator';
 import { User } from './user.entity';
-import { AuthGuard } from 'src/guards/auth.guard';
+import { AuthGuard } from '../guards/auth.guard';
+import { Serialize } from '../interceptors/serialize.interceptor';
 
 @Controller('auth')
 @Serialize(UserDto)
@@ -59,7 +58,7 @@ export class UsersController {
  
     @Get('/:id')
     async findUser(@Param("id") id: string) {
-        log('handler is running');
+        console.log('handler is running');
         const user = await this.usersService.findOne(parseInt(id));
         if (!user) {
             throw new NotFoundException('user not found');

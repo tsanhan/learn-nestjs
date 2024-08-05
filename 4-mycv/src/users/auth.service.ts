@@ -37,15 +37,15 @@ export class AuthService {
 
     async signin(email: string, password: string) {
         const user = await this.usersService.find(email);
-        if(!user.length) 
+        if(!user.length)
             throw new NotFoundException(AuthError.UserNotFound);
-        const fownUser = user[0];
-        const [salt, storedHash] = fownUser.password.split('.');
+        const firstUser = user[0];
+        const [salt, storedHash] = firstUser.password.split('.');
         const hash = scryptSync(password, salt, 32).toString('hex');
         if(hash !== storedHash) 
-            throw new NotFoundException(AuthError.BadPassword);
+            throw new BadRequestException(AuthError.BadPassword);
         
-        return fownUser;
+        return firstUser;
         
     }
 }
